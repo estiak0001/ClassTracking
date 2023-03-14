@@ -1,0 +1,113 @@
+﻿@{
+    ViewData["Title"] = "Create";
+}
+@model Global.Entity.ViewModels.TeacherVM;
+<div class="card">
+    <div class="card-title">
+        <h2>Create/Edit Teacher</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <input hidden id="txtId" value="@Model.Id" disabled="disabled" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Teacher's Name</label>
+                    <input id="txtteachername" value="@Model.Name" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group">
+                    <label>Designation</label>
+                    <input id="txtdesignation" value="@Model.Designation" class="form-control" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="form-group" style="margin-top:10px">
+                    <a onclick="handlesave()" class="btn btn-success">Save</a> <a onclick="backtolist()" class="btn btn-danger">Cancel</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        //var id = $('#txtstandard').val();
+        //$('#txtstandard').val(id);
+    })
+    function backtolist() {
+        window.location.href = "/Teacher";
+    }
+
+    function handlesave() {
+        var Id = $('#txtId').val();
+        var name = $('#txtteachername').val();
+        var designation = $('#txtdesignation').val();
+
+        var isproceed = true;
+
+        // validation
+
+        if (name != '' && name != null) {
+            $('#txtteachername').css('border-color', '#ccc');
+        } else {
+            $('#txtteachername').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (designation != '' && designation != null) {
+            $('#txtdesignation').css('border-color', '#ccc');
+        } else {
+            $('#txtdesignation').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (isproceed) {
+
+            var _teacherInfo = new Object();
+            _teacherInfo.Id = parseInt(Id);
+            _teacherInfo.Name = name;
+            _teacherInfo.Designation = designation;
+
+            $.ajax({
+                type: "POST",
+                url: "/Teacher/Save",
+                data: _teacherInfo,
+                //data: '{"test":' + testdata + '}',
+                //contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    if (data == 'pass') {
+                        alert('Saved successfully.');
+                        backtolist();
+                    } else {
+                        alert("Failure due to :" + data)
+                    }
+                },
+                failure: function (err) {
+
+                }
+            });
+        }
+
+    }
+</script>
+
+

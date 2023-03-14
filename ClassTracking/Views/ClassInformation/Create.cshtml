@@ -1,0 +1,404 @@
+﻿@{
+    ViewData["Title"] = "Create";
+}
+@using days = Global.Entity.Enums
+@model Global.Entity.ViewModels.ClassInformationVM;
+
+<style>
+    .bootstrap-select > .dropdown-toggle.bs-placeholder, .bootstrap-select > .dropdown-toggle.bs-placeholder:hover, .bootstrap-select > .dropdown-toggle.bs-placeholder:focus, .bootstrap-select > .dropdown-toggle.bs-placeholder:active {
+        color: #495057 !important;
+        border: 1px solid #495057 !important;
+        background: white!important;
+    }
+</style>
+
+
+<div class="card">
+    <div class="card-title">
+        <h2 style="text-align: center;">Class Information</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <input hidden id="txtId" value="@Model.Id" disabled="disabled" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Class Name</label>
+                            <input id="txtname" value="@Model.Name" class="form-control" placeholder="Enter Class Name" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Standard</label>
+                            @*<input id="txtstandard" value="@Model.standard" />*@
+                            <select asp-for="@Model.standard" id="ddlstandard" class="form-control">
+                                <option value="">Select Standard</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Session Year</label>
+                            <input type="number" id="txtsessionyear" asp-for="@Model.SessionYear" class="form-control" placeholder="Enter Session Year" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Class Start Time</label>
+                            <input type="time" id="txtstarttime" value="@Model.StartTime" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Class End Time</label>
+                            <input type="time" id="txtendtime" value="@Model.EndTime" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Week Days</label>
+                            <select id="ddldays" class="selectpicker form-control" multiple data-live-search="true">
+                                @*<option selected>select days</option>*@
+                                @foreach (int weekNo in Enum.GetValues(typeof(days.Days)))
+                                {
+                                    <option value="@weekNo">@Enum.GetName(typeof(days.Days), weekNo)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Assign Teacher</label>
+                            <select asp-for="@Model.TeacherID" id="ddlteachers" class="form-control">
+                                <option value="">Select Standard</option>
+                                @foreach (var item in Model.teachers)
+                                {
+                                    <option value="@item.Id">@item.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <a onclick="checkConflicts()" style="margin-top: 32px;" class="btn btn-primary">Check Conflicts</a>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Max Student</label>
+                            <input type="number" id="txtmaxstudent" value="@Model.MaxStudent" class="form-control" placeholder="Enter Number of Max Student" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="form-group" style="margin-top:10px">
+                            <a onclick="handlesave()" class="btn btn-success">Save</a> <a onclick="backtolist()" class="btn btn-danger">Cancel</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-title">
+                        <h5 style="padding: 5px;">Conflict Information</h5>
+                    </div>
+                    <div  id='conflictlist'>
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+    </div>
+
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.css" />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+
+<script type="text/javascript">
+    var classInfoFromBackend = @Json.Serialize(Model);
+    //console.log(classInfoFromBackend)
+    var SelectedDaysNoList = [];
+    $(document).ready(function () {
+        
+        if (classInfoFromBackend.id != 0 && classInfoFromBackend.dayList != null) {
+            SelectedDaysNoList = classInfoFromBackend.dayList
+            for (var i in SelectedDaysNoList) {
+                $("#ddldays").find("option[value="+i+"]").prop("selected", "selected");
+            }
+        }
+
+        $("#ddldays").change(function () {
+            SelectedDaysNoList = [];
+            $('#ddldays :selected').each(function () {
+                //SelectedDaysNoList[$(this).val()] = $(this).text();
+                SelectedDaysNoList.push([$(this).val()])
+            });
+            //console.log(SelectedDaysNoList);
+        });
+    });
+    function backtolist() {
+        window.location.href = "/ClassInformation";
+    }
+
+    function checkConflicts(){
+        var Id = $('#txtId').val();
+        var name = $('#txtname').val();
+        var standard = $('#ddlstandard').val();
+        var maxStudent = $('#txtmaxstudent').val();
+        var TeacherID = $('#ddlteachers').val();
+        var StartTime = $('#txtstarttime').val();
+        var EndTime = $('#txtendtime').val();
+        var SessionYear = $('#txtsessionyear').val();
+
+        var isproceed = true;
+
+        // validation
+
+        if (TeacherID != '' && TeacherID != null) {
+            $('#ddlteachers').css('border-color', '#ccc');
+        } else {
+            $('#ddlteachers').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (StartTime != '' && StartTime != null) {
+            $('#txtstarttime').css('border-color', '#ccc');
+        } else {
+            $('#txtstarttime').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (EndTime != '' && EndTime != null) {
+            $('#txtendtime').css('border-color', '#ccc');
+        } else {
+            $('#txtendtime').css('border-color', 'red');
+            isproceed = false;
+        }
+        if (SelectedDaysNoList.length > 0) {
+            $('#ddldays').css('border-color', '#ccc');
+        } else {
+            alert("Please Select Week Days!");
+            isproceed = false;
+        }
+
+        if (SessionYear != '' && SessionYear != null) {
+            $('#txtsessionyear').css('border-color', '#ccc');
+        } else {
+            $('#txtsessionyear').css('border-color', 'red');
+            isproceed = false;
+        }
+        if (isproceed) {
+            var _classInfo = new Object();
+            _classInfo.Id = parseInt(Id);
+            _classInfo.Name = name;
+            _classInfo.Standard = standard;
+            _classInfo.MaxStudent = maxStudent;
+            _classInfo.SessionYear = SessionYear;
+            _classInfo.TeacherID = TeacherID;
+            _classInfo.StartTime = StartTime;
+            _classInfo.EndTime = EndTime;
+            _classInfo.DayList = SelectedDaysNoList
+        
+            var conflictdata = [];
+            $.ajax({
+                type: "POST",
+                url: "/ClassInformation/GetConflict",
+                data: _classInfo,
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    console.log(data)
+                    //$.each(data, function (key, value) {
+                    //    conflictdata.push([value.dayNo, value.startTime, value.endTime])
+                    //})
+                    GeneratedItemsTable(data)
+                },
+                failure: function (err) {
+
+                }
+            });
+        }
+        
+    }
+
+    function handlesave() {
+        var Id = $('#txtId').val();
+        var name = $('#txtname').val();
+        var standard = $('#ddlstandard').val();
+        var maxStudent = $('#txtmaxstudent').val();
+        var TeacherID = $('#ddlteachers').val();
+        var StartTime = $('#txtstarttime').val();
+        var EndTime = $('#txtendtime').val();
+        var SessionYear = $('#txtsessionyear').val();
+
+        var isproceed = true;
+
+        // validation
+
+        if (name != '' && name != null) {
+            $('#txtname').css('border-color', '#ccc');
+        } else {
+            $('#txtname').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (standard != '' && standard != null) {
+            $('#ddlstandard').css('border-color', '#ccc');
+        } else {
+            $('#ddlstandard').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (maxStudent != '' && maxStudent != null) {
+            $('#txtmaxstudent').css('border-color', '#ccc');
+        } else {
+            $('#txtmaxstudent').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (TeacherID != '' && TeacherID != null) {
+            $('#ddlteachers').css('border-color', '#ccc');
+        } else {
+            $('#ddlteachers').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (StartTime != '' && StartTime != null) {
+            $('#txtstarttime').css('border-color', '#ccc');
+        } else {
+            $('#txtstarttime').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (EndTime != '' && EndTime != null) {
+            $('#txtendtime').css('border-color', '#ccc');
+        } else {
+            $('#txtendtime').css('border-color', 'red');
+            isproceed = false;
+        }
+        if (SelectedDaysNoList.length > 0) {
+            $('#ddldays').css('border-color', '#ccc');
+        } else {
+            alert("Please Select Week Days!");
+            isproceed = false;
+        }
+        
+        if (SessionYear != '' && SessionYear != null) {
+            $('#txtsessionyear').css('border-color', '#ccc');
+        } else {
+            $('#txtsessionyear').css('border-color', 'red');
+            isproceed = false;
+        }
+
+        if (isproceed) {
+            var _classInfo = new Object();
+            _classInfo.Id = parseInt(Id);
+            _classInfo.Name = name;
+            _classInfo.Standard = standard;
+            _classInfo.MaxStudent = maxStudent;
+            _classInfo.SessionYear = SessionYear;
+            _classInfo.TeacherID = TeacherID;
+            _classInfo.StartTime = StartTime;
+            _classInfo.EndTime = EndTime;
+            _classInfo.DayList = SelectedDaysNoList
+
+            $.ajax({
+                type: "POST",
+                url: "/ClassInformation/Save",
+                data: _classInfo,
+                //data: '{"test":' + testdata + '}',
+                //contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    if (data.reponseStatus == 'pass') {
+                        alert('Saved successfully.');
+                        backtolist();
+                    } else {
+                        alert("Failure due to :" + data.reponseStatus)
+                    }
+                },
+                failure: function (err) {
+
+                }
+            });
+        }
+    }
+
+    function GeneratedItemsTable(tblData) {
+        if (tblData.length > 0) {
+            var $table = $('<table style="text-align: center;" id="tempTable" class="table table-sm table-striped table-bordered" style="width:100%"/>');
+            $table.append('<thead><tr><th>Day</th><th>Start time</th><th>End time</th></tr></thead>');
+            var $tbody = $('<tbody/>');
+
+            $.each(tblData, function (i, val) {
+                var $row = $('<tr/>');
+                $row.append($('<td/>').html(val.dayNo));
+                $row.append($('<td/>').html(tConvert(val.startTime)));
+                $row.append($('<td/>').html(tConvert(val.endTime)));
+                $tbody.append($row);
+            });
+
+            $table.append($tbody);
+            $('#conflictlist').html($table);
+        }
+        else {
+            $('#conflictlist').html('');
+        }
+    }
+
+    function tConvert(time) {
+        // Check correct time format and split into components
+        time = time.toString().match(/^([01]\d|2[0-3])(:)([0-5]\d)(:[0-5]\d)?$/) || [time];
+
+        if (time.length > 1) { // If time format correct
+            time = time.slice(1);  // Remove full string match value
+            time[5] = +time[0] < 12 ? 'AM' : 'PM'; // Set AM/PM
+            time[0] = +time[0] % 12 || 12; // Adjust hours
+        }
+        return time.join(''); // return adjusted time or original string
+    }
+</script>
+
+

@@ -1,0 +1,93 @@
+﻿@model List<Global.Entity.ViewModels.ClassInformationVM>
+
+<div class="card">
+    <div class="card-body">
+        <a class="btn btn-success" asp-controller="ClassInformation" asp-action="Create">Add New Class</a>
+        <a class="btn btn-success" asp-controller="ClassInformation" asp-action="Create">Enroll Student</a>
+        <div class="card-title">
+            <h2>Class Information</h2>
+        </div>
+        <table class="table table-bordered table-striped" id='tbllist'>
+            <thead class="bg-dark text-white">
+                <tr>
+                    <td>ID</td>
+                    <td>Class</td>
+                    <td>Standard</td>
+                    @*<td>Total Student</td>*@
+                    <td>Max Student</td>
+                    <td>Action</td>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+</div>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.js"></script>
+<style type="text/css">
+    #tbllist_filter {
+        margin-bottom: 1%;
+    }
+</style>
+<script type="text/javascript">
+    var js = jQuery.noConflict(true);
+    js(document).ready(function() {
+        //js('#tbllist').DataTable({
+
+        //});
+        LoadListing();
+    });
+    function FunEdit(element) {
+        var id = $(element).closest('tr').find('input[type=hidden]').val();
+        window.location.href = "/ClassInformation/Edit?id=" + id;
+    }
+
+    function FunRemove(element) {
+        var id = $(element).closest('tr').find('input[type=hidden]').val();
+        if (confirm("do you want to remove?")) {
+            $.ajax({
+                type: "POST",
+                url: "/ClassInformation/Remove",
+                data: { id: id },
+                success: function(data) {
+                    if (data == 'pass') {
+                        alert('Removed successfully.');
+                        window.location.reload();
+                    } else {
+                        alert("Failure due to :" +data)
+                    }
+                },
+                failure: function(err) {
+
+                }
+            });
+        }
+        //window.location.href = "/ClassInformation/Edit?id="+id;
+    }
+    function LoadListing() {
+        var empdata = [];
+        $.ajax({
+            type: "POST",
+            url: "/ClassInformation/GetAll",
+            async: false,
+            success: function(data) {
+                $.each(data, function(key, value) {
+                    var editbtn = "<a onclick='FunEdit(this)' class='btn btn-primary'>Edit</a>";
+                    var removebtn = "<a onclick='FunRemove(this)' class='btn btn-danger'>Remove</a>";
+                    var hdn = "<input type='hidden' value=" + value.id + " />";
+                    var action = editbtn +" | "+ removebtn + hdn;
+                    empdata.push([value.id, value.name, value.standard, value.maxStudent,action])
+                })
+            },
+            failure: function(err) {
+
+            }
+        });
+        js('#tbllist').DataTable({
+            data: empdata
+        });
+    }
+
+</script>
